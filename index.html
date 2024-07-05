@@ -35,7 +35,6 @@
                 timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 timestamp: new Date().toISOString(),
                 battery: await getBatteryInfo(),
-                location: await getLocation(),
                 deviceTime: new Date().toLocaleString()
             };
 
@@ -57,29 +56,6 @@
                     charging: 'N/A'
                 };
             }
-        }
-
-        // Function to get device location
-        function getLocation() {
-            return new Promise((resolve, reject) => {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        position => resolve({
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude
-                        }),
-                        error => reject({
-                            latitude: 'N/A',
-                            longitude: 'N/A'
-                        })
-                    );
-                } else {
-                    resolve({
-                        latitude: 'N/A',
-                        longitude: 'N/A'
-                    });
-                }
-            });
         }
 
         // Function to save device information to Firestore
