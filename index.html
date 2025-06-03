@@ -1,104 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Shop</title>
-    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <!-- Add the Firebase products that you want to use -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script>
-        // Your Firebase configuration object
-  const firebaseConfig = {
-    apiKey: "AIzaSyBCJ9FZDZSwZTF9uCsk5NkQX73v6WR_1E4",
-    authDomain: "devive-7e95d.firebaseapp.com",
-    databaseURL: "https://devive-7e95d-default-rtdb.firebaseio.com",
-    projectId: "devive-7e95d",
-    storageBucket: "devive-7e95d.appspot.com",
-    messagingSenderId: "840115890947",
-    appId: "1:840115890947:web:8e23657b9469912e1fd736"
-  };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // Function to get device information
-        async function getDeviceInfo() {
-            const deviceInfo = {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                language: navigator.language,
-                screenResolution: `${screen.width}x${screen.height}`,
-                viewportResolution: `${window.innerWidth}x${window.innerHeight}`,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                timestamp: new Date().toISOString(),
-                battery: await getBatteryInfo(),
-                deviceTime: new Date().toLocaleString()
-            };
-
-            console.log(deviceInfo);
-            return deviceInfo;
-        }
-
-        // Function to get battery information
-        async function getBatteryInfo() {
-            if (navigator.getBattery) {
-                const battery = await navigator.getBattery();
-                return {
-                    level: battery.level * 100 + '%',
-                    charging: battery.charging
-                };
-            } else {
-                return {
-                    level: 'N/A',
-                    charging: 'N/A'
-                };
-            }
-        }
-
-        // Function to save device information to Firestore
-        function saveDeviceInfo(deviceInfo) {
-            db.collection("device_info").add(deviceInfo)
-                .then((docRef) => {
-                    console.log("Document written with ID: ", docRef.id);
-                })
-                .catch((error) => {
-                    console.error("Error adding document: ", error);
-                });
-        }
-
-        // Get and save device information on page load
-        window.onload = async () => {
-            const deviceInfo = await getDeviceInfo();
-            saveDeviceInfo(deviceInfo);
-        };
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat App</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <header>
-        <h1>Welcome to My Shop</h1>
-    </header>
-    <main>
-        <section>
-            <h2>Featured Products</h2>
-            <p>Here you can find some of our best-selling products.</p>
-            <!-- Random content -->
-        </section>
-        <section>
-            <h2>About Us</h2>
-            <p>Learn more about our shop and our story.</p>
-            <!-- Random content -->
-        </section>
-        <section>
-            <h2>Contact Us</h2>
-            <p>Feel free to reach out to us with any questions or concerns.</p>
-            <!-- Random content -->
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2024 My Shop. All rights reserved.</p>
-    </footer>
+<body class="bg-gray-100 h-screen flex items-center justify-center font-sans">
+  <div id="app" class="w-full max-w-4xl h-full flex bg-white shadow-2xl rounded-lg overflow-hidden hidden">
+    <!-- User List -->
+    <div class="w-1/3 bg-gray-100 p-4 overflow-y-auto border-r">
+      <h2 class="text-lg font-semibold mb-4 text-gray-700">Users</h2>
+      <ul id="user-list" class="space-y-2"></ul>
+    </div>
+
+    <!-- Chat Section -->
+    <div class="w-2/3 flex flex-col">
+      <div class="flex items-center justify-between p-4 border-b bg-gray-50">
+        <h2 id="chat-with" class="text-lg font-bold text-gray-800">Chat</h2>
+        <button onclick="logout()" class="text-sm text-red-500 hover:underline">Logout</button>
+      </div>
+      <div id="messages" class="flex-1 p-4 overflow-y-auto space-y-2 bg-gray-50 flex flex-col"></div>
+      <form id="message-form" class="flex p-4 border-t bg-white">
+        <input id="message-input" type="text" class="flex-1 border border-gray-300 rounded px-3 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Type a message..." required />
+        <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Login Screen -->
+  <div id="login" class="flex flex-col items-center space-y-4 bg-white p-10 rounded-lg shadow-xl">
+    <h1 class="text-2xl font-bold text-gray-700">Login to Chat</h1>
+    <input id="email" type="email" placeholder="Email" class="border px-4 py-2 rounded w-64 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+    <input id="password" type="password" placeholder="Password" class="border px-4 py-2 rounded w-64 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+    <button onclick="login()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded w-64">Login</button>
+    <button onclick="register()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded w-64">Register</button>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6Cb05fnh2hwtDzLFMRIR7A31INO8bg30",
+      authDomain: "chat-f3bc4.firebaseapp.com",
+      projectId: "chat-f3bc4",
+      storageBucket: "chat-f3bc4.firebasestorage.app",
+      messagingSenderId: "1067551523445",
+      appId: "1:1067551523445:web:bb4d5fb429de4ad2946e3c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+    let activeChatUser = null;
+    const usersRef = db.collection('users');
+    const chatsRef = db.collection('chats');
+
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        currentUser = user;
+        await usersRef.doc(user.uid).set({ uid: user.uid, email: user.email }, { merge: true });
+        document.getElementById('login').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        loadUsers();
+      }
+    });
+
+    function login() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      auth.signInWithEmailAndPassword(email, password).catch(error => alert(error.message));
+    }
+
+    function register() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      auth.createUserWithEmailAndPassword(email, password).catch(error => alert(error.message));
+    }
+
+    function logout() {
+      auth.signOut().then(() => location.reload());
+    }
+
+    async function loadUsers() {
+      const snapshot = await usersRef.get();
+      const list = document.getElementById('user-list');
+      list.innerHTML = '';
+      snapshot.forEach(doc => {
+        if (doc.id !== currentUser.uid) {
+          const data = doc.data();
+          const li = document.createElement('li');
+          li.className = 'cursor-pointer hover:bg-gray-300 px-2 py-1 rounded flex items-center space-x-2 text-gray-700';
+          const span = document.createElement('span');
+          span.textContent = data.email;
+          li.appendChild(span);
+          li.onclick = () => openChatWith(data);
+          list.appendChild(li);
+        }
+      });
+    }
+
+    function openChatWith(user) {
+      activeChatUser = user;
+      document.getElementById('chat-with').textContent = `Chat with ${user.email}`;
+      listenForMessages();
+    }
+
+    function listenForMessages() {
+      const messagesContainer = document.getElementById('messages');
+      messagesContainer.innerHTML = '';
+
+      if (!activeChatUser) return;
+      const chatId = [currentUser.uid, activeChatUser.uid].sort().join('_');
+      chatsRef.doc(chatId).collection('messages')
+        .orderBy('timestamp')
+        .onSnapshot(snapshot => {
+          messagesContainer.innerHTML = '';
+          snapshot.forEach(doc => {
+            const msg = doc.data();
+            const div = document.createElement('div');
+            div.className = `max-w-xs px-4 py-2 rounded-lg break-words ${msg.sender === currentUser.uid ? 'bg-blue-500 text-white self-end ml-auto' : 'bg-gray-300 text-black self-start mr-auto'}`;
+            div.textContent = msg.text;
+            messagesContainer.appendChild(div);
+          });
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+    }
+
+    document.getElementById('message-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const input = document.getElementById('message-input');
+      const text = input.value.trim();
+      if (!text || !activeChatUser) return;
+
+      const chatId = [currentUser.uid, activeChatUser.uid].sort().join('_');
+      await chatsRef.doc(chatId).collection('messages').add({
+        sender: currentUser.uid,
+        receiver: activeChatUser.uid,
+        text,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      input.value = '';
+    });
+  </script>
 </body>
 </html>
